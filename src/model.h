@@ -98,5 +98,7 @@ void mdl_sync(mdl_t *mdl);
 void mdl_compact(mdl_t *mdl);
 void mdl_save(mdl_t *mdl, FILE *file);
 void mdl_load(mdl_t *mdl, FILE *file);
+void mdl_save_path(mdl_t *mdl, const char* file_path);
+void mdl_load_path(mdl_t *mdl, const char* file_path);
 
 #endif

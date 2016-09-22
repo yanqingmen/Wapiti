@@ -180,3 +180,13 @@ void ns_writestr(FILE *file, const char *str) {
 		pfatal("cannot write to file");
 }
 
+FILE* fancy_fopen(const char* file_path, const char* mode) {
+    FILE* file = fopen(file_path, mode);
+    if (file == NULL)
+        pfatal("cannot open file");
+    return file;
+}
+
+int fancy_fclose(FILE* file) {
+    return fclose(file);
+}

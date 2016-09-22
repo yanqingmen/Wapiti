@@ -50,4 +50,6 @@ char *xstrdup(const char *str);
 char *ns_readstr(FILE *file);
 void ns_writestr(FILE *file, const char *str);
 
+FILE* fancy_fopen(const char* file_path, const char* mode);
+int fancy_fclose(FILE* file);
 #endif

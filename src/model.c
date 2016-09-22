@@ -275,6 +275,19 @@ void mdl_save(mdl_t *mdl, FILE *file) {
 			fprintf(file, "%"PRIu64"=%la\n", f, mdl->theta[f]);
 }
 
+/**
+ * save model to given path
+ * add by hzx
+ * @param mdl
+ * @param file_path
+ */
+void mdl_save_path(mdl_t *mdl, const char* file_path) {
+    FILE* file = fopen(file_path, "w");
+    if (file == NULL) 
+        pfatal("cannot open save model file");
+    mdl_save(mdl, file);
+}
+
 /* mdl_load:
  *   Read back a previously saved model to continue training or start labeling.
  *   The returned model is synced and the quarks are locked. You must give to
@@ -304,3 +317,9 @@ void mdl_load(mdl_t *mdl, FILE *file) {
 	}
 }
 
+void mdl_load_path(mdl_t *mdl, const char *file_path) {
+    FILE* file = fopen(file_path, "r");
+    if (file == NULL) 
+        pfatal("cannot open load model file");
+    mdl_load(mdl, file);
+}
