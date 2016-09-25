@@ -39,7 +39,8 @@ class Predictor(object):
         tags = self._fancy_raw2seq(fancy_output)
         # free wapiti objs
         pywapiti.rdr_free_fancy_raw(fancy_input)
-        pywapiti.rdr_free_fancy_raw(fancy_output)
+        pywapiti.rdr_free_fancy_raw(fancy_output) 
+        return tags
 
     @staticmethod
     def _init_model(model_path):

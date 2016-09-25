@@ -99,7 +99,7 @@ void rdr_freeraw(raw_t *raw) {
 }
 
 void rdr_free_fancy_raw(fancy_raw_t *raw) {
-    for(uint32_t t=0; t < raw->max; t++) {
+    for(uint32_t t=0; t < raw->len; t++) {
         free(raw->lines[t]);
     }
     free(raw);
