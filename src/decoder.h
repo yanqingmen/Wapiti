@@ -42,6 +42,7 @@ void tag_nbviterbi(mdl_t *mdl, const seq_t *seq, uint32_t N,
                    uint32_t out[][N], double sc[], double psc[][N]);
 
 void tag_label(mdl_t *mdl, FILE *fin, FILE *fout);
+void tag_seq(mdl_t *mdl, fancy_raw_t *raw_seq,  fancy_raw_t *tag_seq);
 void tag_eval(mdl_t *mdl, double *te, double *se);
 
 #endif

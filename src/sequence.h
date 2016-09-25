@@ -77,6 +77,13 @@ struct raw_s {
 	char     *lines[];  //  [T]    Raw lines directly from file
 };
 
+typedef struct fancy_raw_s fancy_raw_t;
+struct fancy_raw_s{
+    uint32_t max;  //max size of seq
+    uint32_t len;  //current size of seq
+    char *lines[]; // raw lines
+};
+
 /* tok_t:
  *   Data-structure representing a tokenized sequence. This is the result of the
  *   second step of the interning process after the raw sequence have been split

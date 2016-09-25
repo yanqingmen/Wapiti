@@ -528,6 +528,30 @@ void tag_label(mdl_t *mdl, FILE *fin, FILE *fout) {
 	}
 }
 
+void tag_seq(mdl_t *mdl, fancy_raw_t *raw_seq,  fancy_raw_t *tag_seq) {
+    qrk_t *lbls = mdl->reader->lbl;
+    const uint32_t Y = mdl->nlbl;
+    const uint32_t N = mdl->opt->nbest;
+    seq_t *seq = rdr_fancyraw2seq(mdl->reader, raw_seq,
+            mdl->opt->check | mdl->opt->force);
+    const uint32_t T = seq->len;
+    uint32_t *out = xmalloc(sizeof(uint32_t) * T * N);
+    double   *psc = xmalloc(sizeof(double  ) * T * N);
+    double   *scs = xmalloc(sizeof(double  ) * N);
+    if (N == 1)
+        tag_viterbi(mdl, seq, (uint32_t*)out, scs, (double*)psc);
+    else
+        tag_nbviterbi(mdl, seq, N, (void*)out, scs, (void*)psc);
+    for (uint32_t n = 0; n < N; n++) {
+        for (uint32_t t = 0; t < T; t++) {
+            uint32_t lbl = out[t * N + n];
+            const char *lblstr = qrk_id2str(lbls, lbl);
+            uint32_t len = strlen(lblstr) + 1;
+            rdr_add_raw_line(tag_seq, lblstr, len);
+        }
+    }
+}
+
 /* eval_t:
  *   This a state tracker used to communicate between the main eval function and
  *   its workers threads, the <mdl> and <dat> fields are used to transmit to the

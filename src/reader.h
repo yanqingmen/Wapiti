@@ -60,9 +60,16 @@ void rdr_freeraw(raw_t *raw);
 void rdr_freeseq(seq_t *seq);
 void rdr_freedat(dat_t *dat);
 
+// utils for predict wrapper
+void rdr_free_fancy_raw(fancy_raw_t *raw);
+fancy_raw_t *rdr_new_fancy_raw();
+void rdr_add_raw_line(fancy_raw_t *raw, const char* line, uint32_t len);
+const char *rdr_get_raw_line(fancy_raw_t *raw, uint32_t id);
+
 void rdr_loadpat(rdr_t *rdr, FILE *file);
 raw_t *rdr_readraw(rdr_t *rdr, FILE *file);
 seq_t *rdr_raw2seq(rdr_t *rdr, const raw_t *raw, bool lbl);
+seq_t *rdr_fancyraw2seq(rdr_t *rdr, const fancy_raw_t *raw, bool lbl);
 seq_t *rdr_readseq(rdr_t *rdr, FILE *file, bool lbl);
 dat_t *rdr_readdat(rdr_t *rdr, FILE *file, bool lbl);
 

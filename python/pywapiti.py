@@ -73,6 +73,10 @@ except AttributeError:
 def tag_label(*args):
   return _pywapiti.tag_label(*args)
 tag_label = _pywapiti.tag_label
+
+def tag_seq(*args):
+  return _pywapiti.tag_seq(*args)
+tag_seq = _pywapiti.tag_seq
 class mdl_s(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, mdl_s, name, value)
@@ -484,6 +488,22 @@ def rdr_freedat(*args):
   return _pywapiti.rdr_freedat(*args)
 rdr_freedat = _pywapiti.rdr_freedat
 
+def rdr_free_fancy_raw(*args):
+  return _pywapiti.rdr_free_fancy_raw(*args)
+rdr_free_fancy_raw = _pywapiti.rdr_free_fancy_raw
+
+def rdr_new_fancy_raw():
+  return _pywapiti.rdr_new_fancy_raw()
+rdr_new_fancy_raw = _pywapiti.rdr_new_fancy_raw
+
+def rdr_add_raw_line(*args):
+  return _pywapiti.rdr_add_raw_line(*args)
+rdr_add_raw_line = _pywapiti.rdr_add_raw_line
+
+def rdr_get_raw_line(*args):
+  return _pywapiti.rdr_get_raw_line(*args)
+rdr_get_raw_line = _pywapiti.rdr_get_raw_line
+
 def rdr_loadpat(*args):
   return _pywapiti.rdr_loadpat(*args)
 rdr_loadpat = _pywapiti.rdr_loadpat
@@ -495,6 +515,10 @@ rdr_readraw = _pywapiti.rdr_readraw
 def rdr_raw2seq(*args):
   return _pywapiti.rdr_raw2seq(*args)
 rdr_raw2seq = _pywapiti.rdr_raw2seq
+
+def rdr_fancyraw2seq(*args):
+  return _pywapiti.rdr_fancyraw2seq(*args)
+rdr_fancyraw2seq = _pywapiti.rdr_fancyraw2seq
 
 def rdr_readseq(*args):
   return _pywapiti.rdr_readseq(*args)
@@ -534,6 +558,29 @@ class raw_s(_object):
     __del__ = lambda self : None;
 raw_s_swigregister = _pywapiti.raw_s_swigregister
 raw_s_swigregister(raw_s)
+
+class fancy_raw_s(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, fancy_raw_s, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, fancy_raw_s, name)
+    __repr__ = _swig_repr
+    __swig_setmethods__["max"] = _pywapiti.fancy_raw_s_max_set
+    __swig_getmethods__["max"] = _pywapiti.fancy_raw_s_max_get
+    if _newclass:max = _swig_property(_pywapiti.fancy_raw_s_max_get, _pywapiti.fancy_raw_s_max_set)
+    __swig_setmethods__["len"] = _pywapiti.fancy_raw_s_len_set
+    __swig_getmethods__["len"] = _pywapiti.fancy_raw_s_len_get
+    if _newclass:len = _swig_property(_pywapiti.fancy_raw_s_len_get, _pywapiti.fancy_raw_s_len_set)
+    __swig_getmethods__["lines"] = _pywapiti.fancy_raw_s_lines_get
+    if _newclass:lines = _swig_property(_pywapiti.fancy_raw_s_lines_get)
+    def __init__(self): 
+        this = _pywapiti.new_fancy_raw_s()
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _pywapiti.delete_fancy_raw_s
+    __del__ = lambda self : None;
+fancy_raw_s_swigregister = _pywapiti.fancy_raw_s_swigregister
+fancy_raw_s_swigregister(fancy_raw_s)
 
 class tok_s(_object):
     __swig_setmethods__ = {}

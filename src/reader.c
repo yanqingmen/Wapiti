@@ -98,6 +98,39 @@ void rdr_freeraw(raw_t *raw) {
 	free(raw);
 }
 
+void rdr_free_fancy_raw(fancy_raw_t *raw) {
+    for(uint32_t t=0; t < raw->max; t++) {
+        free(raw->lines[t]);
+    }
+    free(raw);
+}
+
+fancy_raw_t *rdr_new_fancy_raw() {
+    uint32_t size = 32;
+    fancy_raw_t *fancy_raw = xmalloc(sizeof(fancy_raw_t) + sizeof(char *) * size);
+    fancy_raw->len = 0;
+    fancy_raw->max = size;
+    return fancy_raw;
+}
+
+void rdr_add_raw_line(fancy_raw_t *raw, const char* line, uint32_t len) {
+    if(raw->len == raw->max) {
+        uint32_t size = raw->max * 1.5;
+        raw = xrealloc(raw, sizeof(fancy_raw_t) + sizeof(char *) * size);
+        raw->max = size;
+    }
+    char *new_line = xmalloc(len);
+    strcpy(new_line, line);
+    raw->lines[raw->len++] = new_line;
+}
+
+const char *rdr_get_raw_line(fancy_raw_t *raw, uint32_t id) {
+    if(id >= raw->len) {
+        return NULL;
+    }
+    return raw->lines[id];
+}
+
 /* rdr_freeseq:
  *   Free all memory used by a seq_t object.
  */
@@ -455,6 +488,70 @@ seq_t *rdr_raw2seq(rdr_t *rdr, const raw_t *raw, bool lbl) {
 	return seq;
 }
 
+seq_t *rdr_fancyraw2seq(rdr_t *rdr, const fancy_raw_t *raw, bool lbl)
+{
+                    const uint32_t T = raw->len;
+	// Allocate the tok_t object, the label array is allocated only if they
+	// are requested by the user.
+	tok_t *tok = xmalloc(sizeof(tok_t) + T * sizeof(char **));
+	tok->cnts = xmalloc(sizeof(uint32_t) * T);
+	tok->lbl = NULL;
+	if (lbl == true)
+		tok->lbl = xmalloc(sizeof(char *) * T);
+	// We now take the raw sequence line by line and split them in list of
+	// tokens. To reduce memory fragmentation, the raw line is copied and
+	// his reference is kept by the first tokens, next tokens are pointer to
+	// this copy.
+	for (uint32_t t = 0; t < T; t++) {
+		// Get a copy of the raw line skiping leading space characters
+		const char *src = raw->lines[t];
+		while (isspace(*src))
+			src++;
+		char *line = xstrdup(src);
+		// Split it in tokens
+		char *toks[strlen(line) / 2 + 1];
+		uint32_t cnt = 0;
+		while (*line != '\0') {
+			toks[cnt++] = line;
+			while (*line != '\0' && !isspace(*line))
+				line++;
+			if (*line == '\0')
+				break;
+			*line++ = '\0';
+			while (*line != '\0' && isspace(*line))
+				line++;
+		}
+		// If user specified that data are labelled, move the last token
+		// to the label array.
+		if (lbl == true) {
+			tok->lbl[t] = toks[cnt - 1];
+			cnt--;
+		}
+		// And put the remaining tokens in the tok_t object
+		tok->cnts[t] = cnt;
+		tok->toks[t] = xmalloc(sizeof(char *) * cnt);
+		memcpy(tok->toks[t], toks, sizeof(char *) * cnt);
+	}
+	tok->len = T;
+	// Convert the tok_t to a seq_t
+	seq_t *seq = NULL;
+	if (rdr->npats == 0)
+		seq = rdr_rawtok2seq(rdr, tok);
+	else
+		seq = rdr_pattok2seq(rdr, tok);
+	// Before returning the sequence, we have to free the tok_t
+	for (uint32_t t = 0; t < T; t++) {
+		if (tok->cnts[t] == 0)
+			continue;
+		free(tok->toks[t][0]);
+		free(tok->toks[t]);
+	}
+	free(tok->cnts);
+	if (lbl == true)
+		free(tok->lbl);
+	free(tok);
+	return seq;
+}
 /* rdr_readseq:
  *   Simple wrapper around rdr_readraw and rdr_raw2seq to directly read a
  *   sequence as a seq_t object from file. This take care of all the process
