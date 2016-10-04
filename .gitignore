@@ -1,2 +1,7 @@
 nbproject
 wapiti
+
+#idea
+.idea
+target
+*.iml

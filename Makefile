@@ -11,7 +11,10 @@ INSTALL_DATA= $(INSTALL) -m 0644
 SRC=src/*.c
 HDR=src/*.h
 # python include path
-PYTHON_INC=/usr/include/python2.7/
+PYTHON_INC=-I/usr/include/python2.7/
+
+# java include path
+JAVA_INC=-I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux
 
 wapiti: $(SRC) $(HDR)
 	@echo "CC: wapiti.c --> wapiti"
@@ -31,7 +34,12 @@ install: wapiti
 python: ./python/_pywapiti.so
 	
 ./python/_pywapiti.so: $(SRC) $(HDR) ./python/wapiti_wrap.c 
-	@$(CC) -DNDEBUG $(CFLAGS) -shared -o ./python/_pywapiti.so -I${PYTHON_INC} $(SRC) ./python/wapiti_wrap.c $(LIBS)
+	@$(CC) -DNDEBUG $(CFLAGS) -shared -o ./python/_pywapiti.so ${PYTHON_INC} $(SRC) ./python/wapiti_wrap.c $(LIBS)
+
+
+java: ./java/libwapiti4j.so
+./java/libwapiti4j.so: $(SRC) $(HDR) ./java/wapiti_wrap.c
+	@$(CC) -DNDEBUG $(CFLAGS) -shared -o ./java/libwapiti4j.so ${JAVA_INC} $(SRC) ./java/wapiti_wrap.c $(LIBS)
 
 
 clean:
