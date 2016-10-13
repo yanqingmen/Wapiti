@@ -73,6 +73,8 @@ rdr_t *rdr_new(bool autouni) {
 	rdr->pats = NULL;
 	rdr->lbl = qrk_new();
 	rdr->obs = qrk_new();
+                  rdr->counts = qrk_new();
+                  rdr->min_count = 0;
 	return rdr;
 }
 
@@ -86,6 +88,7 @@ void rdr_free(rdr_t *rdr) {
 	free(rdr->pats);
 	qrk_free(rdr->lbl);
 	qrk_free(rdr->obs);
+                  qrk_free(rdr->counts);
 	free(rdr);
 }
 
@@ -285,11 +288,32 @@ raw_t *rdr_readraw(rdr_t *rdr, FILE *file) {
 	return raw;
 }
 
+/**
+ * check whether this feature is selected
+ * @param rdr
+ * @param str
+ * @return  1: keep feature, 0: drop freature
+ */
+static uint32_t rdr_selectftr(rdr_t *rdr, const char *str) {
+    if(rdr->min_count <= 0) {
+        return 1;
+    }
+    
+    if(qrk_str2id(rdr->counts, str) > rdr->min_count) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 /* rdr_mapobs:
  *   Map an observation to its identifier, automatically adding a 'u' prefix in
  *   'autouni' mode.
  */
-static uint64_t rdr_mapobs(rdr_t *rdr, const char *str) {
+static uint64_t rdr_mapobs(rdr_t *rdr, const char *str) {   
+                  if (!rdr_selectftr(rdr, str)) {
+                      return none;
+                  }
 	if (!rdr->autouni)
 		return qrk_str2id(rdr->obs, str);
 	char tmp[strlen(str) + 2];
@@ -552,6 +576,115 @@ seq_t *rdr_fancyraw2seq(rdr_t *rdr, const fancy_raw_t *raw, bool lbl)
 	free(tok);
 	return seq;
 }
+
+static void rdr_rawtok_count(rdr_t *rdr, const tok_t *tok)  {
+                  const uint32_t T = tok->len;
+	uint32_t size = 0;
+	if (rdr->autouni) {
+		size = tok->cnts[0];
+	} else {
+		for (uint32_t t = 0; t < T; t++) {
+			for (uint32_t n = 0; n < tok->cnts[t]; n++) {
+				const char *o = tok->toks[t][n];
+				switch (o[0]) {
+					case 'u': size += 1; break;
+					case 'b': size += 1; break;
+					case '*': size += 2; break;
+					default:
+						fatal("invalid feature: %s", o);
+				}
+			}
+		}
+	}
+	for (uint32_t t = 0; t < T; t++) {
+		for (uint32_t n = 0; n < tok->cnts[t]; n++) {
+			if (!rdr->autouni && tok->toks[t][n][0] == 'b')
+				continue;
+			qrk_addstr(rdr->counts, tok->toks[t][n]);
+		}
+		if (rdr->autouni)
+			continue;
+		for (uint32_t n = 0; n < tok->cnts[t]; n++) {
+			if (tok->toks[t][n][0] == 'u')
+				continue;
+			qrk_addstr(rdr->counts, tok->toks[t][n]);
+		}
+	}
+}
+
+static void rdr_pattok_count(rdr_t *rdr, const tok_t *tok) {
+	const uint32_t T = tok->len;
+	//count pattern tokens
+	for (uint32_t t = 0; t < T; t++) {
+		for (uint32_t x = 0; x < rdr->npats; x++) {
+			// Get the observation and map it to an identifier
+			char *obs = pat_exec(rdr->pats[x], tok, t);
+			qrk_addstr(rdr->counts, obs);
+			free(obs);
+		}
+	}
+}
+
+/**
+ * count observations, used for feature selection
+ * @param rdr
+ * @param raw
+ */
+void rdr_countobs(rdr_t *rdr, const raw_t *raw) {
+                  const uint32_t T = raw->len;
+	// Allocate the tok_t object, the label array is allocated only if they
+	// are requested by the user.
+	tok_t *tok = xmalloc(sizeof(tok_t) + T * sizeof(char **));
+	tok->cnts = xmalloc(sizeof(uint32_t) * T);
+	// We now take the raw sequence line by line and split them in list of
+	// tokens. To reduce memory fragmentation, the raw line is copied and
+	// his reference is kept by the first tokens, next tokens are pointer to
+	// this copy.
+	for (uint32_t t = 0; t < T; t++) {
+		// Get a copy of the raw line skiping leading space characters
+		const char *src = raw->lines[t];
+		while (isspace(*src))
+			src++;
+		char *line = xstrdup(src);
+		// Split it in tokens
+		char *toks[strlen(line) / 2 + 1];
+		uint32_t cnt = 0;
+		while (*line != '\0') {
+			toks[cnt++] = line;
+			while (*line != '\0' && !isspace(*line))
+				line++;
+			if (*line == '\0')
+				break;
+			*line++ = '\0';
+			while (*line != '\0' && isspace(*line))
+				line++;
+		}
+		
+		// And put the remaining tokens in the tok_t object
+		tok->cnts[t] = cnt;
+		tok->toks[t] = xmalloc(sizeof(char *) * cnt);
+		memcpy(tok->toks[t], toks, sizeof(char *) * cnt);
+	}
+	tok->len = T;
+	
+                  // count tokens
+	if (rdr->npats == 0)
+		rdr_rawtok_count(rdr, tok);
+	else
+		rdr_pattok_count(rdr, tok);
+	
+                  // free the tok_t
+	for (uint32_t t = 0; t < T; t++) {
+		if (tok->cnts[t] == 0)
+			continue;
+		free(tok->toks[t][0]);
+		free(tok->toks[t]);
+	}
+	free(tok->cnts);
+	free(tok);
+}
+
+
 /* rdr_readseq:
  *   Simple wrapper around rdr_readraw and rdr_raw2seq to directly read a
  *   sequence as a seq_t object from file. This take care of all the process
@@ -563,6 +696,11 @@ seq_t *rdr_readseq(rdr_t *rdr, FILE *file, bool lbl) {
 	raw_t *raw = rdr_readraw(rdr, file);
 	if (raw == NULL)
 		return NULL;
+                  if (rdr->min_count > 0) {
+                      rdr_countobs(rdr, raw);
+                  }
+                  //block counts
+                  qrk_lock(rdr->counts, true);
 	seq_t *seq = rdr_raw2seq(rdr, raw, lbl);
 	rdr_freeraw(raw);
 	return seq;

@@ -268,3 +268,96 @@ bool qrk_lock(qrk_t *qrk, bool lock) {
 	return old;
 }
 
+/**
+ * add key to quark
+ * @param qek
+ * @param key
+ */
+void qrk_addstr(qrk_t *qrk, const char *key) {
+                  const uint8_t *raw = (void *)key;
+	const size_t   len = strlen(key);
+	// We first take care of the empty trie case so later we can safely
+	// assume that the trie is well formed and so there is no NULL pointers
+	// in it.
+	if (qrk->count == 0) {
+		if (qrk->lock == true)
+			return;
+		const size_t size = sizeof(char) * (len + 1);
+		leaf_t *lf = xmalloc(sizeof(leaf_t) + size);
+		memcpy(lf->key, key, size);
+		lf->id = 1;
+		qrk->root = qrk_lf2nd(lf);
+		qrk->leafs[0] = lf;
+		qrk->count = 1;
+		return;
+	}
+	// If the trie is not empty, we first go down the trie to the leaf like
+	// if we are searching for the key. When at leaf there is two case,
+	// either we have found our key or we have found another key with all
+	// its critical bit identical to our one. So we search for the first
+	// differing bit between them to know where we have to add the new node.
+	const node_t *nd = qrk->root;
+	while (!qrk_isleaf(nd)) {
+		const uint8_t chr = nd->pos < len ? raw[nd->pos] : 0;
+		const int side = ((chr | nd->byte) + 1) >> 8;
+		nd = nd->child[side];
+	}
+	const char *bst = qrk_nd2lf(nd)->key;
+	size_t pos;
+	for (pos = 0; pos < len; pos++)
+		if (key[pos] != bst[pos])
+			break;
+	uint8_t byte;
+	if (pos != len) {
+		byte = key[pos] ^ bst[pos];
+                  }
+	else if (bst[pos] != '\0') {
+		byte = bst[pos];
+                  }
+	else {
+		qrk_nd2lf(nd)->id++;
+                                    return;
+                  }
+	if (qrk->lock == true)
+		return;
+	// Now we known the two key are different and we know in which byte. It
+	// remain to build the mask for the new critical bit and build the new
+	// internal node and leaf.
+	while (byte & (byte - 1))
+		byte &= byte - 1;
+	byte ^= 255;
+	const uint8_t chr = bst[pos];
+	const int side = ((chr | byte) + 1) >> 8;
+	const size_t size = sizeof(char) * (len + 1);
+	node_t *nx = xmalloc(sizeof(node_t));
+	leaf_t *lf = xmalloc(sizeof(leaf_t) + size);
+	memcpy(lf->key, key, size);
+                  qrk->count++;
+	lf->id   = 1;
+	nx->pos  = pos;
+	nx->byte = byte;
+	nx->child[1 - side] = qrk_lf2nd(lf);
+	if (lf->id == qrk->size) {
+		qrk->size *= 1.4;
+		const size_t size = sizeof(leaf_t *) * qrk->size;
+		qrk->leafs = xrealloc(qrk->leafs, size);
+	}
+	qrk->leafs[lf->id] = lf;
+	// And last thing to do: inserting the new node in the trie. We have to
+	// walk down the trie again as we have to keep the ordering of nodes. So
+	// we search for the good position to insert it.
+	node_t **trg = &qrk->root;
+	while (true) {
+		node_t *nd = *trg;
+		if (qrk_isleaf(nd) || nd->pos > pos)
+			break;
+		if (nd->pos == pos && nd->byte > byte)
+			break;
+		const uint8_t chr = nd->pos < len ? raw[nd->pos] : 0;
+		const int side = ((chr | nd->byte) + 1) >> 8;
+		trg = &nd->child[side];
+	}
+	nx->child[side] = *trg;
+	*trg = nx;
+	return;
+}

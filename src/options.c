@@ -87,6 +87,7 @@ static void opt_help(const char *pname) {
 		"\t   | --stpinc   FLOAT   (rprop)  step increment factor\n"
 		"\t   | --stpdec   FLOAT   (rprop)  step decrement factor\n"
 		"\t   | --cutoff           (rprop)  alternate projection\n"
+                                    "\t   | --min_count    INT     param for feature selection"
 		"\n"
 		"Label mode:\n"
 		"    %1$s label [options] [input data] [output data]\n"
@@ -134,6 +135,7 @@ const opt_t opt_defaults = {
 	.label   = false,    .check   = false, .outsc = false,
 	.lblpost = false,    .nbest   = 1,     .force = false,
 	.prec    = 5,        .all     = false,
+                  .min_count = 0
 };
 
 /* opt_switch:
@@ -176,6 +178,7 @@ struct {
 	{0, "##", "--stpinc",  'F', offsetof(opt_t, rprop.stpinc)},
 	{0, "##", "--stpdec",  'F', offsetof(opt_t, rprop.stpdec)},
 	{0, "##", "--cutoff",  'B', offsetof(opt_t, rprop.cutoff)},
+                  {0, "##", "--min_count", 'U', offsetof(opt_t, min_count)},
 	{1, "##", "--me",      'B', offsetof(opt_t, maxent      )},
 	{1, "-m", "--model",   'S', offsetof(opt_t, model       )},
 	{1, "-l", "--label",   'B', offsetof(opt_t, label       )},

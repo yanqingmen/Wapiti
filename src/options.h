@@ -88,6 +88,9 @@ struct opt_s {
 	// Options for model dump
 	int       prec;
 	bool      all;
+        
+                 // option for feature selection
+                 int min_count;
 };
 
 extern const opt_t opt_defaults;

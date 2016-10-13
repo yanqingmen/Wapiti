@@ -52,6 +52,8 @@ struct rdr_s {
 	pat_t    **pats;       // [P]  List of precompiled patterns
 	qrk_t     *lbl;        //      Labels database
 	qrk_t     *obs;        //      Observation database
+                  qrk_t     *counts;  // observation counts used for feature selection
+                  uint32_t min_count; // select features occur more than min_count, if min_count=0, will select all ftrs
 };
 
 rdr_t *rdr_new(bool autouni);

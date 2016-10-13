@@ -43,5 +43,8 @@ uint64_t qrk_str2id(qrk_t *qrk, const char *key);
 void qrk_load(qrk_t *qrk, FILE *file);
 void qrk_save(const qrk_t *qrk, FILE *file);
 
+//use qrk to save word count
+void qrk_addstr(qrk_t *qrk, const char *key);
+
 #endif
 
