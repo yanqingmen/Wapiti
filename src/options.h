@@ -91,6 +91,9 @@ struct opt_s {
         
                  // option for feature selection
                  int min_count;
+                 
+                 // use feature file to limit the features
+                 char *feature_file;
 };
 
 extern const opt_t opt_defaults;

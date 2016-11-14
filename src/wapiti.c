@@ -113,6 +113,20 @@ static void dotrain(mdl_t *mdl) {
 		fclose(file);
 		qrk_lock(mdl->reader->obs, false);
 	}
+        
+                  // if feature file is specified, load feature to mdl->reader->obs
+                  // obs will be locked after feature is load
+                  if (mdl->opt->feature_file != NULL) {
+                      info("* Load features\n");
+                      FILE *file = fopen(mdl->opt->feature_file, "r");
+	    if (file == NULL) 
+                          pfatal("cannot open feature file");
+                      qrk_load(mdl->reader->obs, file);
+                      fclose(file);
+                      qrk_lock(mdl->reader->obs, true);
+                  }
+        
+        
 	// Load the training data. When this is done we lock the quarks as we
 	// don't want to put in the model, informations present only in the
 	// devlopment set.
